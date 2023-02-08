@@ -1,0 +1,263 @@
+﻿@page "/items"
+
+<nav class="navbar navbar-light bg-light justify-content-between">
+    <h1 class="navbar-brand mb-0 h1">Items</h1>
+    <button class="btn btn-primary" type="button" @onclick="OpenAddItemDialog">
+        <span class="oi oi-plus" /> Add
+    </button>
+</nav>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Quantity</th>
+            <th>CreatedBy</th>
+            <th>Date</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in items)
+        {
+            <tr>
+                <td>@item.Name</td>
+                <td>@item.Quantity</td>
+                <td>@item.CreatedBy</td>
+                <td>@item.Date</td>
+                <td>
+                    <button class="btn btn-outline-secondary"
+                        @onclick="()=>OpenEditTodoDialog(item)" type="button">
+                        <span class="oi oi-pencil" /> Edit
+                    </button>
+                    <button class="btn btn-outline-danger" @onclick="()=>OpenDeleteTodoDialog(item)" type="button">
+                        <span class="oi oi-delete" /> Delete
+                    </button>
+                    <button class="btn btn-outline-primary" @onclick="()=>OpenTakeOutDialog(item)" type="button">
+                        <span class="oi oi-pencil" /> Take Out
+                    </button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@if (_showEditTodoDialog)
+{
+    <ModalDialog Title="@_dialogTitle" OnClose="@OnEditTodoDialogClose" OkLabel="@_dialogOkLabel">
+        <form>
+            <div class="form-floating">
+                <input type="text" class="form-control username" @bind="_itemModel.Name" placeholder="Name" />
+                <label for="floatingInput">Name</label>
+            </div>
+            <div class="form-floating mb-3">
+                <input type="text" class="form-control" @bind="_itemModel.Quantity" placeholder="Qty" />
+                <label for="floatingPassword">Quantity</label>
+            </div>
+            <div class="form-floating">
+                <input type="text" class="form-control" @bind="_itemModel.CreatedBy" placeholder="Created By" />
+                <label for="floatingInput">Created By</label>
+            </div>
+        </form>
+
+        @if (!string.IsNullOrEmpty(_editTodoErrorMessage))
+        {
+            <AlertMessage Type="danger" Message="@_editTodoErrorMessage" />
+        }
+    </ModalDialog>
+}
+
+@if (_showTakeOutDialog)
+{
+    <ModalDialog Title="@_dialogTitle" OnClose="@OnTakeOutDialogClose" OkLabel="@_dialogOkLabel">
+        <form>
+            <div class="form-floating">
+                <input type="number" class="form-control quantity" @bind="_takeOutItem.Quantity" placeholder="Quantity" />
+                <label for="floatingInput">Quantity</label>
+            </div>
+            <div class="form-floating">
+                <input type="string" class="form-control quantity" @bind="_takeOutItem.CreatedBy" placeholder="Taken Out By" />
+                <label for="floatingInput">Taken Out By</label>
+            </div>
+            <div class="form-floating">
+                <input type="string" class="form-control quantity" @bind="_takeOutItem.ApprovedBy" placeholder="Approved By" />
+                <label for="floatingInput">Approved By</label>
+            </div>
+            
+        </form>
+
+        @if (!string.IsNullOrEmpty(_takeOutErrorMessage))
+        {
+            <AlertMessage Type="danger" Message="@_takeOutErrorMessage" />
+        }
+    </ModalDialog>
+}
+@if (_showDeleteTodoDialog)
+{
+    <ModalDialog Title="Delete Todo" OnClose="@OnDeleteTodoDialogClose" OkLabel="Confirm">
+        <p>Are you sure you want to delete this item?</p>
+        @if (!string.IsNullOrEmpty(_deleteTodoErrorMessage))
+        {
+            <AlertMessage Type="danger" Message="@_deleteTodoErrorMessage" />
+        }
+    </ModalDialog>
+}
+
+@if (_showTakeOutDateError)
+{
+    <ModalDialog Title="Takeout Error" OnClose="@OnTakeOutDateErrorClose" OkLabel="Okay">
+        <p>You cannot takeout item at this time. <strong></strong></p>
+        
+    </ModalDialog>
+}
+
+@code {
+    [CascadingParameter]
+    private GlobalState _globalState { get; set; }
+    private bool _showEditTodoDialog { get; set; }
+    private bool _showDeleteTodoDialog { get; set; }
+    private bool _showTakeOutDialog{ get; set; }
+    private List<ItemsModel> _items { get; set; }
+    private ItemsModel _deleteItem { get; set; }
+    private ItemsModel _takeOutItem { get; set; }
+    private string _addItemErrorMessage { get; set; }
+    private string _deleteTodoErrorMessage { get; set; }
+    private string _editTodoErrorMessage { get; set; }
+    private string _takeOutErrorMessage{ get; set; }
+    private bool _showTakeOutDateError{ get; set; }
+    private string _dialogTitle { get; set; }
+    private string _dialogOkLabel { get; set; }
+    private ItemsModel _itemModel { get; set; }
+
+    ItemsModel model = new ItemsModel();
+
+    private List<ItemsModel> items { get; set; }
+
+    protected override void OnInitialized()
+    {
+        items = ItemService.ReadData();
+    }
+
+    private void OpenAddItemDialog()
+    {
+        _dialogTitle = "Add Item";
+        _dialogOkLabel = "Add";
+        _itemModel = new ItemsModel();
+        _itemModel.Id = Guid.Empty;
+        _showEditTodoDialog = true;
+    }
+    private void OpenEditTodoDialog(ItemsModel editItems)
+    {
+        _dialogTitle = "Edit Item";
+        _dialogOkLabel = "Save";
+        _itemModel = editItems;
+        _showEditTodoDialog = true;
+
+    }
+    private void OnEditTodoDialogClose(bool isCancel)
+    {
+        if (isCancel)
+        {
+            _showEditTodoDialog = false;
+        }
+        else
+        {
+            try
+            {
+                _editTodoErrorMessage = "";
+                if (_itemModel.Id == Guid.Empty)
+                {
+                    _items = ItemService.WriteData(_itemModel.Name, _itemModel.Quantity, _itemModel.CreatedBy, _itemModel.Date);
+
+                }
+                else
+                {
+                    _items = ItemService.Update(_itemModel.Id, _itemModel.Name, _itemModel.Quantity, _itemModel.CreatedBy, _itemModel.Date);
+
+
+                }
+                items = _items;
+                _showEditTodoDialog = false;
+            }
+            catch (Exception e)
+            {
+                _editTodoErrorMessage = e.Message;
+            }
+        }
+    }
+
+    private void OnTakeOutDialogClose(bool isCancel)
+    {
+        if (isCancel)
+        {
+            _showTakeOutDialog = false;
+        }
+        else
+        {
+            try
+            {
+                _takeOutErrorMessage = "";
+                _items = ItemService.TakeOut(_takeOutItem.Id,_takeOutItem.CreatedBy,_takeOutItem.ApprovedBy, _takeOutItem.Quantity);
+
+                _showTakeOutDialog = false;
+                _takeOutItem = null;
+            }
+            catch (Exception e)
+            {
+                _takeOutErrorMessage = e.Message;
+            }
+        }
+    }
+
+    private void OnTakeOutDateErrorClose(bool isCancel)
+    {
+        _showTakeOutDateError = false;
+    }
+
+    private void OpenTakeOutDialog(ItemsModel takeout)
+    {
+        _dialogTitle = "Take Out Item";
+        _dialogOkLabel = "Save";
+        _takeOutItem = takeout;
+        string today = DateTime.Now.DayOfWeek.ToString();
+        if ( today == "Saturday" || today =="Sunday")
+        {
+            _showTakeOutDateError= true;
+        }
+        else
+        {
+            _showTakeOutDialog = true;
+        }
+
+    }
+
+    private void OpenDeleteTodoDialog(ItemsModel itemsModel)
+    {
+        _deleteItem = itemsModel;
+        _showDeleteTodoDialog = true;
+
+    }
+    private void OnDeleteTodoDialogClose(bool isCancel)
+    {
+        if (isCancel)
+        {
+            _showDeleteTodoDialog = false;
+            _deleteItem = null;
+        }
+        else
+        {
+            try
+            {
+                _deleteTodoErrorMessage = "";
+                _items= ItemService.Delete(_deleteItem.Id);
+                items = ItemService.ReadData();
+                _showDeleteTodoDialog = false;
+                _deleteItem = null;
+            }
+            catch (Exception e)
+            {
+                _deleteTodoErrorMessage = e.Message;
+            }
+        }
+    }
+
+}
+

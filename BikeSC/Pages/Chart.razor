@@ -1,0 +1,24 @@
+﻿@page "/chart"
+@using MudBlazor
+
+<h3>Items Taken Out</h3>
+<div>
+
+    <MudChart ChartType="ChartType.Bar" ChartSeries="@Series" XAxisLabels="@XAxisLabels" Width="100%" Height="350px" />
+</div>
+
+
+
+@code {
+
+
+    public List<ChartSeries> Series = new List<ChartSeries>()
+    {
+    new ChartSeries() { Name = "Items", Data = ChartService.GetData().Values.ToArray()  }
+
+
+    };
+    public string[] XAxisLabels = ChartService.GetData().Keys.ToArray();
+}
+
+

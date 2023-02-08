@@ -1,0 +1,90 @@
+﻿@page "/takenout"
+
+<nav class="navbar navbar-light bg-light justify-content-between">
+    <h1 class="navbar-brand mb-0 h1">Taken Out Items</h1>
+    <label for="month">Choose a month:</label>
+
+    <select class="form-control" id="month" @onchange="onChange" >
+        <option value="all">All</option>
+        <option value="january">January</option>
+        <option value="february">Februrary</option>
+        <option value="march">March</option>
+        <option value="april">April</option>
+        <option value="may">May</option>
+        <option value="june">June</option>
+        <option value="july">July</option>
+        <option value="august">August</option>
+        <option value="september">September</option>
+        <option value="october">October</option>
+        <option value="november">November</option>
+       <option value="december">December</option>
+    </select>
+
+</nav>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Quantity</th>
+            <th>TakenBy</th>
+            <th>ApprovedBy</th>
+            <th>Date</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in items)
+        {
+            <tr>
+                <td>@item.Name</td>
+                <td>@item.Quantity</td>
+                <td>@item.TakenBy</td>
+                <td>@item.ApprovedBy</td>
+                <td>@item.Date</td>                
+                   
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code{
+    private List<TakenOutModel> items { get; set; }
+    private List<TakenOutModel> itemsTakenOut{ get; set; }
+    private string selectedMonth{ get; set; }
+    private List<TakenOutModel> filteredItems{ get; set; }
+
+    protected override void OnInitialized()
+    {
+        items = TakenOutService.ReadTakenOutData();
+    }
+
+
+
+    public void onChange(ChangeEventArgs e)
+    {
+        string selectedString = e.Value.ToString();
+        items = filterByDate(selectedString);
+
+    }
+
+    public List<TakenOutModel> filterByDate(string selectedMonth)
+    {
+        items = TakenOutService.ReadTakenOutData();
+        List<TakenOutModel> filteredItems = new List<TakenOutModel>();
+        foreach(var item in items)
+        {
+            if(selectedMonth == "all")
+            {
+                return (items);
+            }
+            else
+            {
+                if (item.Date.ToString("MMMM").ToLower() == selectedMonth)
+                {
+                    filteredItems.Add(item);
+                }
+            }
+            
+        }
+        return filteredItems;
+    }
+}
